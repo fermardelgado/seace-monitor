@@ -1,0 +1,33 @@
+name: Scraper SEACE Diario
+
+on:
+  schedule:
+    - cron: '0 13 * * *'  # 8:00 AM Lima (UTC-5 = 13:00 UTC)
+  workflow_dispatch:       # Permite correrlo manualmente tambien
+
+jobs:
+  scraper:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Ejecutar scraper SEACE
+        run: python scraper.py
+
+      - name: Subir datos.json actualizado a GitHub
+        run: |
+          git config user.name "LicitAlertas Bot"
+          git config user.email "bot@licitalertas.com"
+          git add datos.json
+          git diff --staged --quiet || git commit -m "Actualizar datos SEACE - $(date '+%Y-%m-%d %H:%M')"
+          git push
