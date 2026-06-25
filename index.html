@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEACE Monitor — Alertas de Contrataciones</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;color:#1a202c;min-height:100vh}
+  header{background:linear-gradient(135deg,#1a365d 0%,#2b6cb0 100%);color:white;padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+  header h1{font-size:1.4rem;font-weight:700;letter-spacing:-0.5px}
+  header .subtitle{font-size:0.8rem;opacity:0.8;margin-top:2px}
+  .header-right{text-align:right;font-size:0.8rem;opacity:0.85}
+  .container{max-width:1300px;margin:0 auto;padding:1.5rem}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .metric{background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);border-left:4px solid #2b6cb0}
+  .metric.urgente{border-left-color:#e53e3e}
+  .metric.proximo{border-left-color:#d69e2e}
+  .metric.ok{border-left-color:#38a169}
+  .metric.monto{border-left-color:#805ad5}
+  .metric-label{font-size:0.75rem;color:#718096;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+  .metric-value{font-size:1.8rem;font-weight:700;color:#1a202c}
+  .metric-sub{font-size:0.75rem;color:#718096;margin-top:4px}
+  .filters{background:white;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end}
+  .filter-group{display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px}
+  .filter-group label{font-size:0.75rem;font-weight:600;color:#4a5568;text-transform:uppercase;letter-spacing:0.05em}
+  .filter-group select,.filter-group input{padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.875rem;color:#1a202c;background:white;outline:none;transition:border-color 0.2s}
+  .filter-group select:focus,.filter-group input:focus{border-color:#2b6cb0}
+  .btn-filter{padding:8px 20px;background:#2b6cb0;color:white;border:none;border-radius:8px;font-size:0.875rem;font-weight:600;cursor:pointer;transition:background 0.2s}
+  .btn-filter:hover{background:#1a365d}
+  .btn-reset{padding:8px 16px;background:#f7fafc;color:#4a5568;border:1px solid #e2e8f0;border-radius:8px;font-size:0.875rem;cursor:pointer}
+  .tabs{display:flex;gap:4px;margin-bottom:1rem;background:white;padding:4px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08);width:fit-content}
+  .tab{padding:8px 20px;border-radius:8px;cursor:pointer;font-size:0.875rem;font-weight:500;color:#718096;transition:all 0.2s;border:none;background:transparent}
+  .tab.active{background:#2b6cb0;color:white;box-shadow:0 1px 4px rgba(43,108,176,0.3)}
+  .panel{display:none}
+  .panel.active{display:block}
+  .conv-list{display:flex;flex-direction:column;gap:0.75rem}
+  .conv-card{background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.08);border-left:4px solid #2b6cb0;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;transition:box-shadow 0.2s}
+  .conv-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.12)}
+  .conv-card.urgente{border-left-color:#e53e3e}
+  .conv-card.proximo{border-left-color:#d69e2e}
+  .conv-card.vencido{border-left-color:#a0aec0}
+  .conv-title{font-size:0.9rem;font-weight:600;color:#1a202c;margin-bottom:6px;line-height:1.4}
+  .conv-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:0.775rem;color:#718096}
+  .conv-meta span{display:flex;align-items:center;gap:3px}
+  .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap}
+  .badge.urgente{background:#fff5f5;color:#c53030}
+  .badge.proximo{background:#fffbeb;color:#b7791f}
+  .badge.ok{background:#f0fff4;color:#276749}
+  .badge.vencido{background:#f7fafc;color:#718096}
+  .dias-box{text-align:center;min-width:70px}
+  .dias-num{font-size:1.5rem;font-weight:800;color:#2b6cb0}
+  .dias-num.urgente{color:#e53e3e}
+  .dias-num.proximo{color:#d69e2e}
+  .dias-num.vencido{color:#a0aec0}
+  .dias-label{font-size:0.65rem;color:#718096;text-transform:uppercase}
+  .timeline-wrap{background:white;border-radius:12px;padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+  .timeline-title{font-size:1rem;font-weight:600;margin-bottom:1rem;color:#1a202c}
+  .tl-item{display:flex;align-items:center;gap:1rem;padding:10px 0;border-bottom:1px solid #f0f4f8}
+  .tl-item:last-child{border-bottom:none}
+  .tl-bar-wrap{flex:1;background:#f0f4f8;border-radius:8px;height:28px;overflow:hidden;position:relative}
+  .tl-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding-left:10px;font-size:0.75rem;font-weight:600;color:white;transition:width 0.6s ease;white-space:nowrap;overflow:hidden}
+  .tl-name{width:260px;min-width:200px;font-size:0.8rem;color:#2d3748;line-height:1.3}
+  .tl-dias{width:70px;text-align:right;font-size:0.85rem;font-weight:700}
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .chart-card{background:white;border-radius:12px;padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+  .chart-card h3{font-size:0.9rem;font-weight:600;color:#4a5568;margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.05em}
+  .alerta-banner{background:linear-gradient(135deg,#fff5f5,#fed7d7);border:1px solid #fc8181;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:10px}
+  .alerta-banner .icon{font-size:1.5rem}
+  .alerta-banner .text{font-size:0.875rem;color:#742a2a;font-weight:500}
+  .empty{text-align:center;padding:3rem;color:#a0aec0;font-size:0.9rem}
+  .tag{display:inline-block;background:#ebf8ff;color:#2b6cb0;font-size:0.7rem;padding:2px 8px;border-radius:4px;font-weight:500}
+  @media(max-width:768px){
+    .charts-grid{grid-template-columns:1fr}
+    .tl-name{width:120px;min-width:100px;font-size:0.7rem}
+    header{flex-direction:column;gap:8px;text-align:center}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>📋 SEACE Monitor</h1>
+    <div class="subtitle">Sistema de monitoreo inteligente de contrataciones del Estado</div>
+  </div>
+  <div class="header-right">
+    <div id="fecha-hora"></div>
+    <div style="margin-top:4px;font-size:0.7rem;opacity:0.7">Última actualización: automática diaria</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ALERTAS URGENTES -->
+  <div id="alertas-urgentes"></div>
+
+  <!-- MÉTRICAS -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Total convocatorias</div>
+      <div class="metric-value" id="m-total">0</div>
+      <div class="metric-sub">en seguimiento activo</div>
+    </div>
+    <div class="metric urgente">
+      <div class="metric-label">🔴 Urgentes</div>
+      <div class="metric-value" id="m-urgente">0</div>
+      <div class="metric-sub">vencen en ≤ 3 días</div>
+    </div>
+    <div class="metric proximo">
+      <div class="metric-label">🟡 Próximas</div>
+      <div class="metric-value" id="m-proximo">0</div>
+      <div class="metric-sub">vencen en ≤ 10 días</div>
+    </div>
+    <div class="metric monto">
+      <div class="metric-label">💰 Monto total</div>
+      <div class="metric-value" id="m-monto">S/. 0</div>
+      <div class="metric-sub">suma de convocatorias</div>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <div class="filter-group">
+      <label>Tipo de contratación</label>
+      <select id="f-tipo">
+        <option value="">Todos los tipos</option>
+        <option>Licitación Pública</option>
+        <option>Concurso Público</option>
+        <option>Adjudicación Simplificada</option>
+        <option>Comparación de Precios</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Urgencia</label>
+      <select id="f-urgencia">
+        <option value="">Todas</option>
+        <option value="urgente">🔴 Urgente (≤3 días)</option>
+        <option value="proximo">🟡 Próximo (≤10 días)</option>
+        <option value="ok">🟢 Normal</option>
+        <option value="vencido">⚫ Vencido</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Región</label>
+      <select id="f-region">
+        <option value="">Todas las regiones</option>
+        <option>Lima</option><option>Cusco</option><option>Arequipa</option>
+        <option>Piura</option><option>La Libertad</option><option>Puno</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Buscar palabra clave</label>
+      <input type="text" id="f-buscar" placeholder="Ej: equipos, limpieza, TI...">
+    </div>
+    <button class="btn-filter" onclick="filtrar()">🔍 Filtrar</button>
+    <button class="btn-reset" onclick="resetFiltros()">↺ Limpiar</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('convocatorias',this)">📋 Convocatorias</button>
+    <button class="tab" onclick="showTab('timeline',this)">📅 Línea de tiempo</button>
+    <button class="tab" onclick="showTab('graficos',this)">📊 Gráficos</button>
+  </div>
+
+  <!-- PANEL CONVOCATORIAS -->
+  <div id="panel-convocatorias" class="panel active">
+    <div class="conv-list" id="lista-convocatorias"></div>
+  </div>
+
+  <!-- PANEL TIMELINE -->
+  <div id="panel-timeline" class="panel">
+    <div class="timeline-wrap">
+      <div class="timeline-title">📅 Días restantes hasta vencimiento de cada proceso</div>
+      <div id="timeline-content"></div>
+    </div>
+  </div>
+
+  <!-- PANEL GRÁFICOS -->
+  <div id="panel-graficos" class="panel">
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Por tipo de contratación</h3>
+        <canvas id="chart-tipo" role="img" aria-label="Gráfico de torta por tipo de contratación"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Por nivel de urgencia</h3>
+        <canvas id="chart-urgencia" role="img" aria-label="Gráfico de barras por urgencia"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// DATOS — Aquí se cargarán los datos reales del scraper
+// Por ahora usamos datos de ejemplo representativos
+// ============================================================
+const hoy = new Date();
+hoy.setHours(0,0,0,0);
+
+function diasDesdeHoy(fechaStr){
+  const f = new Date(fechaStr);
+  f.setHours(0,0,0,0);
+  return Math.round((f - hoy) / 86400000);
+}
+
+const DATOS = [
+  {id:1, titulo:"Adquisicion de equipos de computo e impresoras para sede Lima", entidad:"Municipalidad de Lima", tipo:"Adjudicacion Simplificada", monto:85000, region:"Lima", vencimiento: fFecha(2)},
+  {id:2, titulo:"Servicio de limpieza y mantenimiento de locales institucionales", entidad:"Ministerio de Educacion", tipo:"Concurso Publico", monto:42000, region:"Lima", vencimiento: fFecha(15)},
+  {id:3, titulo:"Suministro de materiales de construccion para obra vial", entidad:"Gobierno Regional Cusco", tipo:"Licitacion Publica", monto:320000, region:"Cusco", vencimiento: fFecha(7)},
+  {id:4, titulo:"Consultoria en sistemas de informacion y ciberseguridad", entidad:"SUNAT", tipo:"Concurso Publico", monto:95000, region:"Lima", vencimiento: fFecha(22)},
+  {id:5, titulo:"Adquisicion de mobiliario de oficina y estantes metalicos", entidad:"Ministerio de Salud", tipo:"Adjudicacion Simplificada", monto:28000, region:"Lima", vencimiento: fFecha(1)},
+  {id:6, titulo:"Servicio de seguridad y vigilancia privada para edificio institucional", entidad:"Poder Judicial", tipo:"Licitacion Publica", monto:180000, region:"Lima", vencimiento: fFecha(30)},
+  {id:7, titulo:"Suministro de utiles de oficina, papeleria y materiales de impresion", entidad:"Ministerio de Economia", tipo:"Comparacion de Precios", monto:15000, region:"Lima", vencimiento: fFecha(0)},
+  {id:8, titulo:"Servicio de mantenimiento preventivo y correctivo de vehiculos", entidad:"MINEDU", tipo:"Adjudicacion Simplificada", monto:67000, region:"Lima", vencimiento: fFecha(10)},
+  {id:9, titulo:"Adquisicion de equipos medicos e instrumental quirurgico hospitalario", entidad:"EsSalud", tipo:"Licitacion Publica", monto:450000, region:"Lima", vencimiento: fFecha(25)},
+  {id:10, titulo:"Servicio de capacitacion y entrenamiento en gestion publica", entidad:"Ministerio de Trabajo", tipo:"Concurso Publico", monto:38000, region:"Lima", vencimiento: fFecha(18)},
+  {id:11, titulo:"Adquisicion de tablets y dispositivos moviles para campo", entidad:"MIDIS", tipo:"Adjudicacion Simplificada", monto:62000, region:"Piura", vencimiento: fFecha(3)},
+  {id:12, titulo:"Contratacion de servicio de internet y conectividad para sedes", entidad:"Gobierno Regional Arequipa", tipo:"Adjudicacion Simplificada", monto:48000, region:"Arequipa", vencimiento: fFecha(-2)},
+];
+
+function fFecha(dias){
+  const f = new Date(hoy);
+  f.setDate(f.getDate() + dias);
+  return f.toISOString().split('T')[0];
+}
+
+function urgencia(dias){
+  if(dias < 0) return 'vencido';
+  if(dias <= 3) return 'urgente';
+  if(dias <= 10) return 'proximo';
+  return 'ok';
+}
+
+function urgenciaLabel(u){
+  if(u==='urgente') return '🔴 Urgente';
+  if(u==='proximo') return '🟡 Próximo';
+  if(u==='vencido') return '⚫ Vencido';
+  return '🟢 Normal';
+}
+
+function formatMonto(n){
+  return 'S/. ' + n.toLocaleString('es-PE');
+}
+
+function formatFecha(str){
+  const [y,m,d] = str.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+let datosFiltrados = [...DATOS];
+
+function calcularDatos(lista){
+  return lista.map(d => ({
+    ...d,
+    dias: diasDesdeHoy(d.vencimiento),
+    urg: urgencia(diasDesdeHoy(d.vencimiento))
+  }));
+}
+
+function actualizarMetricas(lista){
+  document.getElementById('m-total').textContent = lista.length;
+  document.getElementById('m-urgente').textContent = lista.filter(d=>d.urg==='urgente').length;
+  document.getElementById('m-proximo').textContent = lista.filter(d=>d.urg==='proximo').length;
+  const total = lista.reduce((s,d)=>s+d.monto,0);
+  document.getElementById('m-monto').textContent = formatMonto(total);
+}
+
+function renderAlertas(lista){
+  const urgentes = lista.filter(d=>d.urg==='urgente');
+  const el = document.getElementById('alertas-urgentes');
+  el.innerHTML = '';
+  urgentes.forEach(d=>{
+    el.innerHTML += `<div class="alerta-banner">
+      <span class="icon">🚨</span>
+      <div class="text"><strong>URGENTE — ${d.dias === 0 ? 'VENCE HOY' : 'vence en '+d.dias+' día(s)'}:</strong> ${d.titulo} — ${d.entidad}</div>
+    </div>`;
+  });
+}
+
+function renderConvocatorias(lista){
+  const el = document.getElementById('lista-convocatorias');
+  if(lista.length === 0){
+    el.innerHTML = '<div class="empty">No se encontraron convocatorias con los filtros aplicados.</div>';
+    return;
+  }
+  el.innerHTML = lista.sort((a,b)=>a.dias-b.dias).map(d=>`
+    <div class="conv-card ${d.urg}">
+      <div style="flex:1">
+        <div class="conv-title">${d.titulo}</div>
+        <div class="conv-meta">
+          <span>🏛️ ${d.entidad}</span>
+          <span>📁 <span class="tag">${d.tipo}</span></span>
+          <span>📍 ${d.region}</span>
+          <span>💰 ${formatMonto(d.monto)}</span>
+          <span>📅 Vence: ${formatFecha(d.vencimiento)}</span>
+        </div>
+        <div style="margin-top:8px"><span class="badge ${d.urg}">${urgenciaLabel(d.urg)}</span></div>
+      </div>
+      <div class="dias-box">
+        <div class="dias-num ${d.urg}">${d.dias < 0 ? Math.abs(d.dias) : d.dias}</div>
+        <div class="dias-label">${d.dias < 0 ? 'días vencido' : d.dias === 0 ? 'HOYA' : 'días rest.'}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTimeline(lista){
+  const el = document.getElementById('timeline-content');
+  const sorted = [...lista].sort((a,b)=>a.dias-b.dias);
+  const max = Math.max(...sorted.filter(d=>d.dias>=0).map(d=>d.dias), 1);
+  
+  const colores = {urgente:'#e53e3e', proximo:'#d69e2e', ok:'#38a169', vencido:'#a0aec0'};
+  
+  el.innerHTML = sorted.map(d=>{
+    const pct = d.dias <= 0 ? 5 : Math.min(100, Math.round((d.dias / max) * 100));
+    const col = colores[d.urg];
+    const label = d.dias < 0 ? `Venció hace ${Math.abs(d.dias)} días` : d.dias === 0 ? 'Vence HOY' : `${d.dias} días`;
+    return `<div class="tl-item">
+      <div class="tl-name">${d.titulo.substring(0,55)}...</div>
+      <div class="tl-bar-wrap">
+        <div class="tl-bar" style="width:${pct}%;background:${col}">${label}</div>
+      </div>
+      <div class="tl-dias" style="color:${col}">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+let chartTipo = null, chartUrg = null;
+
+function renderGraficos(lista){
+  // Tipos
+  const tipos = {};
+  lista.forEach(d=>{ tipos[d.tipo] = (tipos[d.tipo]||0)+1; });
+  const tLabels = Object.keys(tipos), tVals = Object.values(tipos);
+  if(chartTipo) chartTipo.destroy();
+  chartTipo = new Chart(document.getElementById('chart-tipo'),{
+    type:'doughnut',
+    data:{labels:tLabels, datasets:[{data:tVals, backgroundColor:['#2b6cb0','#38a169','#d69e2e','#805ad5','#e53e3e']}]},
+    options:{responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:11}}}}}
+  });
+  // Urgencias
+  const urgLabels = ['Urgente','Próximo','Normal','Vencido'];
+  const urgVals = [
+    lista.filter(d=>d.urg==='urgente').length,
+    lista.filter(d=>d.urg==='proximo').length,
+    lista.filter(d=>d.urg==='ok').length,
+    lista.filter(d=>d.urg==='vencido').length,
+  ];
+  if(chartUrg) chartUrg.destroy();
+  chartUrg = new Chart(document.getElementById('chart-urgencia'),{
+    type:'bar',
+    data:{
+      labels:urgLabels,
+      datasets:[{data:urgVals, backgroundColor:['#e53e3e','#d69e2e','#38a169','#a0aec0'], borderRadius:8}]
+    },
+    options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true, grid:{color:'#f0f4f8'}}}}
+  });
+}
+
+function render(){
+  const lista = calcularDatos(datosFiltrados);
+  actualizarMetricas(lista);
+  renderAlertas(lista);
+  renderConvocatorias(lista);
+  renderTimeline(lista);
+  renderGraficos(lista);
+}
+
+function filtrar(){
+  const tipo = document.getElementById('f-tipo').value;
+  const urg = document.getElementById('f-urgencia').value;
+  const region = document.getElementById('f-region').value;
+  const buscar = document.getElementById('f-buscar').value.toLowerCase();
+  datosFiltrados = DATOS.filter(d=>{
+    const dias = diasDesdeHoy(d.vencimiento);
+    const u = urgencia(dias);
+    return (!tipo || d.tipo === tipo)
+        && (!urg || u === urg)
+        && (!region || d.region === region)
+        && (!buscar || d.titulo.toLowerCase().includes(buscar));
+  });
+  render();
+}
+
+function resetFiltros(){
+  document.getElementById('f-tipo').value='';
+  document.getElementById('f-urgencia').value='';
+  document.getElementById('f-region').value='';
+  document.getElementById('f-buscar').value='';
+  datosFiltrados = [...DATOS];
+  render();
+}
+
+function showTab(id, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function actualizarHora(){
+  const ahora = new Date();
+  document.getElementById('fecha-hora').textContent =
+    ahora.toLocaleDateString('es-PE',{weekday:'long',year:'numeric',month:'long',day:'numeric'})
+    + ' — ' + ahora.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'});
+}
+
+actualizarHora();
+setInterval(actualizarHora, 60000);
+render();
+</script>
+</body>
+</html>
