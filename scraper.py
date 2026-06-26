@@ -7,8 +7,8 @@ from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 
 # Configuracion SMTP Hostinger
-SMTP_HOST = "smtp.hostinger.com"
-SMTP_PORT = 465
+SMTP_HOST = "smtp.gmail.com"
+SMTP_PORT = 587
 EMAIL_USER = os.environ.get("EMAIL_USER", "")
 EMAIL_PASS = os.environ.get("EMAIL_PASS", "")
 EMAIL_DESTINO = os.environ.get("EMAIL_DESTINO", "")
@@ -192,7 +192,8 @@ def enviar_email(convocatorias, fecha):
     msg.attach(MIMEText(html, "html"))
 
     try:
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
             server.login(EMAIL_USER, EMAIL_PASS)
             server.sendmail(EMAIL_USER, EMAIL_DESTINO, msg.as_string())
         print(f"Email enviado a {EMAIL_DESTINO}")
