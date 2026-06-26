@@ -34,4 +34,4 @@ jobs:
           git config user.name "LicitAlertas Bot"
           git config user.email "bot@licitalertas.com"
           git add datos.json
-          git diff --staged --quiet || (git commit -m "Actualizar datos SEACE - $(date '+%Y-%m-%d %H:%M')" && git pull --rebase origin main && git push origin main)
+          git diff --staged --quiet || (git commit -m "Actualizar datos SEACE - $(date '+%Y-%m-%d %H:%M')" && git pull --rebase origin main && git push origin main --force)
