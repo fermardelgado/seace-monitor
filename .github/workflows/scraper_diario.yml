@@ -22,6 +22,7 @@ jobs:
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
           EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
           EMAIL_DESTINO: ${{ secrets.EMAIL_DESTINO }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         run: python scraper.py
       - name: Subir datos.json actualizado a GitHub
         run: |
