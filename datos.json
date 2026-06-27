@@ -1,1 +1,127 @@
-{}
+{
+  "ultima_actualizacion": "2026-06-27 14:22",
+  "total": 10,
+  "fuente": "SEACE - Sistema Electronico de Contrataciones del Estado",
+  "convocatorias": [
+    {
+      "id": "F001",
+      "titulo": "Adquisicion de equipos de computo e impresoras",
+      "entidad": "Municipalidad de Lima",
+      "tipo": "Adjudicacion Simplificada",
+      "monto": 85000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-06-29",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 2,
+      "urg": "urgente"
+    },
+    {
+      "id": "F002",
+      "titulo": "Servicio de limpieza y mantenimiento de locales",
+      "entidad": "Ministerio de Educacion",
+      "tipo": "Concurso Publico",
+      "monto": 42000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-07-12",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 15,
+      "urg": "normal"
+    },
+    {
+      "id": "F003",
+      "titulo": "Suministro de materiales de construccion vial",
+      "entidad": "Gobierno Regional Cusco",
+      "tipo": "Licitacion Publica",
+      "monto": 320000,
+      "region": "Cusco",
+      "fecha_vencimiento": "2026-07-04",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 7,
+      "urg": "proximo"
+    },
+    {
+      "id": "F004",
+      "titulo": "Consultoria en sistemas de informacion",
+      "entidad": "SUNAT",
+      "tipo": "Concurso Publico",
+      "monto": 95000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-07-19",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 22,
+      "urg": "normal"
+    },
+    {
+      "id": "F005",
+      "titulo": "Adquisicion de mobiliario de oficina",
+      "entidad": "Ministerio de Salud",
+      "tipo": "Adjudicacion Simplificada",
+      "monto": 28000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-06-28",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 1,
+      "urg": "urgente"
+    },
+    {
+      "id": "F006",
+      "titulo": "Servicio de seguridad y vigilancia privada",
+      "entidad": "Poder Judicial",
+      "tipo": "Licitacion Publica",
+      "monto": 180000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-07-27",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 30,
+      "urg": "normal"
+    },
+    {
+      "id": "F007",
+      "titulo": "Suministro de utiles de oficina",
+      "entidad": "Ministerio de Economia",
+      "tipo": "Comparacion de Precios",
+      "monto": 15000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-06-27",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 0,
+      "urg": "urgente"
+    },
+    {
+      "id": "F008",
+      "titulo": "Servicio de mantenimiento de vehiculos",
+      "entidad": "MINEDU",
+      "tipo": "Adjudicacion Simplificada",
+      "monto": 67000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-07-07",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 10,
+      "urg": "proximo"
+    },
+    {
+      "id": "F009",
+      "titulo": "Adquisicion de equipos medicos",
+      "entidad": "EsSalud",
+      "tipo": "Licitacion Publica",
+      "monto": 450000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-07-22",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 25,
+      "urg": "normal"
+    },
+    {
+      "id": "F010",
+      "titulo": "Servicio de capacitacion en gestion publica",
+      "entidad": "Ministerio de Trabajo",
+      "tipo": "Concurso Publico",
+      "monto": 38000,
+      "region": "Lima",
+      "fecha_vencimiento": "2026-07-15",
+      "url_seace": "https://seace.gob.pe",
+      "dias": 18,
+      "urg": "normal"
+    }
+  ]
+}
