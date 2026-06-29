@@ -3,55 +3,114 @@ import json
 import os
 from datetime import datetime, timedelta
 
-# Configuracion SendGrid
+# Configuracion
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
 EMAIL_USER = os.environ.get("EMAIL_USER", "")
 EMAIL_DESTINO = os.environ.get("EMAIL_DESTINO", "")
 
-BASE_URL = "https://prod2.seace.gob.pe/seacebus-uimp-pub/buscadorPublico/"
-HEADERS = {"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"}
+BRIGHTDATA_HOST = os.environ.get("BRIGHTDATA_HOST", "")
+BRIGHTDATA_PORT = os.environ.get("BRIGHTDATA_PORT", "")
+BRIGHTDATA_USER = os.environ.get("BRIGHTDATA_USER", "")
+BRIGHTDATA_PASS = os.environ.get("BRIGHTDATA_PASS", "")
+
+OECE_URL = "https://contratacionesabiertas.oece.gob.pe/api/v1/releases"
+
+def get_proxy():
+    if BRIGHTDATA_HOST and BRIGHTDATA_PORT and BRIGHTDATA_USER and BRIGHTDATA_PASS:
+        proxy_url = f"http://{BRIGHTDATA_USER}:{BRIGHTDATA_PASS}@{BRIGHTDATA_HOST}:{BRIGHTDATA_PORT}"
+        return {"http": proxy_url, "https": proxy_url}
+    return None
 
 def obtener_convocatorias():
-    hoy = datetime.now()
-    hace_30_dias = hoy - timedelta(days=30)
-    payload = {
-        "numPagina": 1,
-        "numResultados": 100,
-        "codigoEntidad": "",
-        "fechaInicio": hace_30_dias.strftime("%d/%m/%Y"),
-        "fechaFin": hoy.strftime("%d/%m/%Y"),
-        "idEstadoProceso": "1",
-    }
+    proxies = get_proxy()
+    params = {"order": "desc", "limit": 100}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+
     try:
-        resp = requests.post(BASE_URL + "listarProcesosActivos", json=payload, headers=HEADERS, timeout=30)
+        print("Consultando API OECE OCDS...")
+        resp = requests.get(
+            OECE_URL,
+            params=params,
+            headers=headers,
+            proxies=proxies,
+            timeout=60,
+            verify=False
+        )
+        print(f"Status: {resp.status_code}")
         resp.raise_for_status()
-        return resp.json()
+        data = resp.json()
+        print(f"Respuesta recibida. Keys: {list(data.keys()) if isinstance(data, dict) else 'lista'}")
+        return data
     except Exception as e:
-        print(f"Error SEACE: {e}")
+        print(f"Error API OECE: {e}")
         return None
 
 def procesar_datos(data):
     if not data:
         return []
-    registros = data.get("listaResultados", []) or data.get("registros", []) or []
+
+    # La API OECE devuelve {"releases": [...]}
+    releases = []
+    if isinstance(data, dict):
+        releases = data.get("releases", [])
+    elif isinstance(data, list):
+        releases = data
+
+    print(f"Total releases encontrados: {len(releases)}")
+
     convocatorias = []
-    for r in registros:
+    for r in releases:
         try:
+            tender = r.get("tender", {})
+            buyer = r.get("buyer", {})
+            planning = r.get("planning", {})
+
+            # Fecha de vencimiento
+            tender_period = tender.get("tenderPeriod", {})
+            fecha_venc = tender_period.get("endDate", "")
+            if fecha_venc:
+                # Formato ISO: 2026-07-15T17:00:00Z -> 2026-07-15
+                fecha_venc = fecha_venc[:10]
+
+            # Fecha publicacion
+            fecha_pub = r.get("date", "")
+            if fecha_pub:
+                fecha_pub = fecha_pub[:10]
+
+            # Monto
+            monto = 0
+            budget = planning.get("budget", {})
+            if budget:
+                monto = float(budget.get("amount", {}).get("amount", 0) or 0)
+            if monto == 0:
+                valor = tender.get("value", {})
+                if valor:
+                    monto = float(valor.get("amount", 0) or 0)
+
+            # Region
+            addresses = tender.get("deliveryAddresses", [])
+            region = "Lima"
+            if addresses:
+                region = addresses[0].get("region", "Lima") or "Lima"
+
             conv = {
-                "id": str(r.get("idProceso") or r.get("codigoProceso", "")),
-                "titulo": r.get("descripcionObjeto") or r.get("nombreObjeto", "Sin titulo"),
-                "entidad": r.get("nombreEntidad") or r.get("entidad", ""),
-                "tipo": r.get("descripcionTipoProceso") or r.get("tipoProceso", ""),
-                "monto": float(r.get("valorReferencial") or r.get("montoReferencial") or 0),
-                "region": r.get("nombreDepartamento") or r.get("region") or "Lima",
-                "fecha_publicacion": r.get("fechaPublicacion") or r.get("fecPublicacion") or "",
-                "fecha_vencimiento": r.get("fechaVencimiento") or r.get("fecVencimiento") or "",
-                "estado": r.get("descripcionEstadoProceso") or "Activo",
-                "url_seace": f"https://seace.gob.pe/proceso/{r.get('codigoProceso','')}",
+                "id": r.get("ocid", "") or r.get("id", ""),
+                "titulo": tender.get("title", "Sin titulo"),
+                "entidad": buyer.get("name", ""),
+                "tipo": tender.get("procurementMethodDetails", "") or tender.get("procurementMethod", ""),
+                "monto": monto,
+                "region": region,
+                "fecha_publicacion": fecha_pub,
+                "fecha_vencimiento": fecha_venc,
+                "estado": tender.get("status", "active"),
+                "url_seace": f"https://prodapp2.seace.gob.pe/seacebus-uimp-pub/fichaSeleccion/fichaSeleccion.xhtml?idProceso={r.get('ocid','')}",
             }
             convocatorias.append(conv)
-        except:
+        except Exception as e:
+            print(f"Error procesando release: {e}")
             continue
+
+    print(f"Convocatorias procesadas: {len(convocatorias)}")
     return convocatorias
 
 def datos_respaldo():
@@ -64,7 +123,7 @@ def datos_respaldo():
         {"id":"F004","titulo":"Consultoria en sistemas de informacion","entidad":"SUNAT","tipo":"Concurso Publico","monto":95000,"region":"Lima","fecha_vencimiento":f(22),"url_seace":"https://seace.gob.pe"},
         {"id":"F005","titulo":"Adquisicion de mobiliario de oficina","entidad":"Ministerio de Salud","tipo":"Adjudicacion Simplificada","monto":28000,"region":"Lima","fecha_vencimiento":f(1),"url_seace":"https://seace.gob.pe"},
         {"id":"F006","titulo":"Servicio de seguridad y vigilancia privada","entidad":"Poder Judicial","tipo":"Licitacion Publica","monto":180000,"region":"Lima","fecha_vencimiento":f(30),"url_seace":"https://seace.gob.pe"},
-        {"id":"F007","titulo":"Suministro de utiles de oficina","entidad":"Ministerio de Economia","tipo":"Comparacion de Precios","monto":15000,"region":"Lima","fecha_vencimiento":f(0),"url_seace":"https://seace.gob.pe"},
+        {"id":"F007","titulo":"Suministro de utiles de oficina","entidad":"Ministerio de Economia","tipo":"Comparacion de Precios","monto":15000,"region":"Lima","fecha_vencimiento":f(3),"url_seace":"https://seace.gob.pe"},
         {"id":"F008","titulo":"Servicio de mantenimiento de vehiculos","entidad":"MINEDU","tipo":"Adjudicacion Simplificada","monto":67000,"region":"Lima","fecha_vencimiento":f(10),"url_seace":"https://seace.gob.pe"},
         {"id":"F009","titulo":"Adquisicion de equipos medicos","entidad":"EsSalud","tipo":"Licitacion Publica","monto":450000,"region":"Lima","fecha_vencimiento":f(25),"url_seace":"https://seace.gob.pe"},
         {"id":"F010","titulo":"Servicio de capacitacion en gestion publica","entidad":"Ministerio de Trabajo","tipo":"Concurso Publico","monto":38000,"region":"Lima","fecha_vencimiento":f(18),"url_seace":"https://seace.gob.pe"},
@@ -91,7 +150,7 @@ def urgencia(dias):
     if dias <= 10: return "proximo"
     return "normal"
 
-def generar_email_html(convocatorias, fecha):
+def generar_email_html(convocatorias, fecha, fuente="OECE API"):
     urgentes = [c for c in convocatorias if c["urg"] == "urgente"]
     proximas = [c for c in convocatorias if c["urg"] == "proximo"]
     normales = [c for c in convocatorias if c["urg"] == "normal"]
@@ -133,11 +192,15 @@ def generar_email_html(convocatorias, fecha):
           <tbody>{filas}</tbody>
         </table>"""
 
+    badge_fuente = "#38a169" if "OECE" in fuente else "#e53e3e"
+    label_fuente = "DATOS REALES" if "OECE" in fuente else "DATOS DE RESPALDO"
+
     return f"""<html><body style="font-family:Arial,sans-serif;background:#f0f4f8;margin:0;padding:20px">
       <div style="max-width:900px;margin:0 auto">
         <div style="background:linear-gradient(135deg,#1a365d,#2b6cb0);color:white;padding:24px 32px;border-radius:12px 12px 0 0">
           <h1 style="margin:0;font-size:22px">LicitAlertas - Reporte Diario</h1>
           <p style="margin:6px 0 0;opacity:0.85;font-size:14px">{fecha} | {len(convocatorias)} convocatorias activas</p>
+          <span style="background:{badge_fuente};color:white;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:700">{label_fuente}</span>
         </div>
         <div style="background:white;padding:24px 32px;border-radius:0 0 12px 12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
           {seccion("URGENTES - Vencen en 3 dias o menos", urgentes, "#e53e3e", "URGENTE")}
@@ -147,7 +210,7 @@ def generar_email_html(convocatorias, fecha):
       </div>
     </body></html>"""
 
-def enviar_email(convocatorias, fecha):
+def enviar_email(convocatorias, fecha, fuente="OECE API"):
     if not SENDGRID_API_KEY or not EMAIL_USER or not EMAIL_DESTINO:
         print("Credenciales no configuradas, omitiendo envio.")
         return
@@ -156,8 +219,10 @@ def enviar_email(convocatorias, fecha):
     asunto = f"LicitAlertas {fecha} - {len(convocatorias)} convocatorias"
     if urgentes > 0:
         asunto = f"LicitAlertas {fecha} - {urgentes} URGENTES + {len(convocatorias)} total"
+    if "respaldo" in fuente.lower():
+        asunto += " [RESPALDO]"
 
-    html = generar_email_html(convocatorias, fecha)
+    html = generar_email_html(convocatorias, fecha, fuente)
 
     response = requests.post(
         "https://api.sendgrid.com/v3/mail/send",
@@ -179,30 +244,41 @@ def enviar_email(convocatorias, fecha):
 
 def main():
     fecha = datetime.now().strftime("%d/%m/%Y")
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Iniciando scraper SEACE...")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Iniciando scraper LicitAlertas...")
 
+    fuente = "OECE API"
     data = obtener_convocatorias()
     convocatorias = procesar_datos(data) if data else []
 
-    if not convocatorias:
-        print("Usando datos de respaldo...")
-        convocatorias = datos_respaldo()
-
+    # Filtrar solo activas (no vencidas)
+    convocatorias_activas = []
     for c in convocatorias:
+        dias = dias_restantes(c.get("fecha_vencimiento", ""))
+        if dias >= 0:
+            convocatorias_activas.append(c)
+
+    print(f"Convocatorias activas (no vencidas): {len(convocatorias_activas)}")
+
+    if not convocatorias_activas:
+        print("Sin datos reales activos, usando respaldo...")
+        convocatorias_activas = datos_respaldo()
+        fuente = "Datos de respaldo"
+
+    for c in convocatorias_activas:
         c["dias"] = dias_restantes(c.get("fecha_vencimiento", ""))
         c["urg"] = urgencia(c["dias"])
 
     output = {
         "ultima_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "total": len(convocatorias),
-        "fuente": "SEACE - Sistema Electronico de Contrataciones del Estado",
-        "convocatorias": convocatorias
+        "total": len(convocatorias_activas),
+        "fuente": fuente,
+        "convocatorias": convocatorias_activas
     }
     with open("datos.json", "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
-    print(f"datos.json guardado: {len(convocatorias)} convocatorias")
+    print(f"datos.json guardado: {len(convocatorias_activas)} convocatorias ({fuente})")
 
-    enviar_email(convocatorias, fecha)
+    enviar_email(convocatorias_activas, fecha, fuente)
     print("Proceso completado.")
 
 if __name__ == "__main__":
