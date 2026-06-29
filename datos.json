@@ -1,7 +1,7 @@
 {
-  "ultima_actualizacion": "2026-06-29 04:42",
+  "ultima_actualizacion": "2026-06-29 04:56",
   "total": 10,
-  "fuente": "SEACE - Sistema Electronico de Contrataciones del Estado",
+  "fuente": "Datos de respaldo",
   "convocatorias": [
     {
       "id": "F001",
@@ -82,9 +82,9 @@
       "tipo": "Comparacion de Precios",
       "monto": 15000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-06-29",
+      "fecha_vencimiento": "2026-07-02",
       "url_seace": "https://seace.gob.pe",
-      "dias": 0,
+      "dias": 3,
       "urg": "urgente"
     },
     {
