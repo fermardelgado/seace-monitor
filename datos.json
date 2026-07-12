@@ -1,5 +1,5 @@
 {
-  "ultima_actualizacion": "2026-07-11 14:17",
+  "ultima_actualizacion": "2026-07-12 14:22",
   "total": 10,
   "fuente": "Datos de respaldo",
   "convocatorias": [
@@ -10,7 +10,7 @@
       "tipo": "Adjudicacion Simplificada",
       "monto": 85000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-07-13",
+      "fecha_vencimiento": "2026-07-14",
       "url_seace": "https://seace.gob.pe",
       "dias": 2,
       "urg": "urgente"
@@ -22,7 +22,7 @@
       "tipo": "Concurso Publico",
       "monto": 42000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-07-26",
+      "fecha_vencimiento": "2026-07-27",
       "url_seace": "https://seace.gob.pe",
       "dias": 15,
       "urg": "normal"
@@ -34,7 +34,7 @@
       "tipo": "Licitacion Publica",
       "monto": 320000,
       "region": "Cusco",
-      "fecha_vencimiento": "2026-07-18",
+      "fecha_vencimiento": "2026-07-19",
       "url_seace": "https://seace.gob.pe",
       "dias": 7,
       "urg": "proximo"
@@ -46,7 +46,7 @@
       "tipo": "Concurso Publico",
       "monto": 95000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-08-02",
+      "fecha_vencimiento": "2026-08-03",
       "url_seace": "https://seace.gob.pe",
       "dias": 22,
       "urg": "normal"
@@ -58,7 +58,7 @@
       "tipo": "Adjudicacion Simplificada",
       "monto": 28000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-07-12",
+      "fecha_vencimiento": "2026-07-13",
       "url_seace": "https://seace.gob.pe",
       "dias": 1,
       "urg": "urgente"
@@ -70,7 +70,7 @@
       "tipo": "Licitacion Publica",
       "monto": 180000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-08-10",
+      "fecha_vencimiento": "2026-08-11",
       "url_seace": "https://seace.gob.pe",
       "dias": 30,
       "urg": "normal"
@@ -82,7 +82,7 @@
       "tipo": "Comparacion de Precios",
       "monto": 15000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-07-14",
+      "fecha_vencimiento": "2026-07-15",
       "url_seace": "https://seace.gob.pe",
       "dias": 3,
       "urg": "urgente"
@@ -94,7 +94,7 @@
       "tipo": "Adjudicacion Simplificada",
       "monto": 67000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-07-21",
+      "fecha_vencimiento": "2026-07-22",
       "url_seace": "https://seace.gob.pe",
       "dias": 10,
       "urg": "proximo"
@@ -106,7 +106,7 @@
       "tipo": "Licitacion Publica",
       "monto": 450000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-08-05",
+      "fecha_vencimiento": "2026-08-06",
       "url_seace": "https://seace.gob.pe",
       "dias": 25,
       "urg": "normal"
@@ -118,7 +118,7 @@
       "tipo": "Concurso Publico",
       "monto": 38000,
       "region": "Lima",
-      "fecha_vencimiento": "2026-07-29",
+      "fecha_vencimiento": "2026-07-30",
       "url_seace": "https://seace.gob.pe",
       "dias": 18,
       "urg": "normal"
